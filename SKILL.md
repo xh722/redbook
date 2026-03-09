@@ -53,10 +53,16 @@ Use the `redbook` CLI to search notes, read content, analyze creators, automate 
 | Post a comment | `redbook comment <url> --content "text"` |
 | Reply to comment | `redbook reply <url> --comment-id <id> --content "text"` |
 | Batch reply (preview) | `redbook batch-reply <url> --strategy questions --dry-run` |
+| Like a note | `redbook like <url>` |
+| Unlike a note | `redbook like <url> --undo` |
 | List favorites | `redbook favorites --json` or `redbook favorites <userId> --json` |
 | Collect a note | `redbook collect <url>` |
 | Remove from collection | `redbook uncollect <url>` |
+| List followers | `redbook followers <userId> --json` |
+| List following | `redbook following <userId> --json` |
+| Delete own note | `redbook delete <url>` |
 | Render markdown to cards | `redbook render content.md --style xiaohongshu` |
+| Publish image note | `redbook post --title "..." --body "..." --images img.jpg` |
 | Check connection | `redbook whoami` |
 
 **Always add `--json`** when parsing output programmatically. Without it, output is human-formatted text.

@@ -306,6 +306,46 @@ export class XhsClient {
     });
   }
 
+  // ─── Like / Unlike Endpoints ─────────────────────────────────────────
+
+  async likeNote(noteId: string): Promise<unknown> {
+    return this.mainApiPost("/api/sns/web/v1/note/like", {
+      note_oid: noteId,
+    });
+  }
+
+  async unlikeNote(noteId: string): Promise<unknown> {
+    return this.mainApiPost("/api/sns/web/v1/note/dislike", {
+      note_oid: noteId,
+    });
+  }
+
+  // ─── Follow Endpoints ────────────────────────────────────────────────
+
+  async getUserFollowers(userId: string, cursor: string = ""): Promise<unknown> {
+    return this.mainApiGet("/api/sns/web/v1/user/fans_page", {
+      user_id: userId,
+      cursor,
+      num: 30,
+    });
+  }
+
+  async getUserFollowing(userId: string, cursor: string = ""): Promise<unknown> {
+    return this.mainApiGet("/api/sns/web/v1/user/following_page", {
+      user_id: userId,
+      cursor,
+      num: 30,
+    });
+  }
+
+  // ─── Delete Endpoint ─────────────────────────────────────────────────
+
+  async deleteNote(noteId: string): Promise<unknown> {
+    return this.creatorPost("/api/galaxy/creator/note/delete", {
+      note_id: noteId,
+    });
+  }
+
   async getSubComments(
     noteId: string,
     rootCommentId: string,

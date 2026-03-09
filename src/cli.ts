@@ -16,6 +16,11 @@
  *   redbook favorites --cookie-source chrome --json
  *   redbook collect <url> --cookie-source chrome
  *   redbook uncollect <url> --cookie-source chrome
+ *   redbook like <url> --cookie-source chrome
+ *   redbook like <url> --undo --cookie-source chrome
+ *   redbook followers <user-id> --cookie-source chrome --json
+ *   redbook following <user-id> --cookie-source chrome --json
+ *   redbook delete <url> --cookie-source chrome
  */
 
 import { Command } from "commander";
@@ -545,6 +550,140 @@ uncollectCmd.action(async (url, opts) => {
       output(result, true);
     } else {
       console.log(kleur.green("Note removed from collection!"));
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
+// ─── like ──────────────────────────────────────────────────────────────────
+
+const likeCmd = program
+  .command("like <url>")
+  .description("Like a note")
+  .option("--undo", "Unlike the note instead");
+addCookieOption(likeCmd);
+addJsonOption(likeCmd);
+
+likeCmd.action(async (url, opts) => {
+  try {
+    const client = await getClient(opts.cookieSource, opts.chromeProfile, opts.cookieString);
+    const { noteId } = parseNoteUrl(url);
+    if (opts.undo) {
+      const result = await client.unlikeNote(noteId);
+      if (opts.json) { output(result, true); } else { console.log(kleur.green("Note unliked!")); }
+    } else {
+      const result = await client.likeNote(noteId);
+      if (opts.json) { output(result, true); } else { console.log(kleur.green("Note liked!")); }
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
+// ─── followers ─────────────────────────────────────────────────────────────
+
+const followersCmd = program
+  .command("followers <userId>")
+  .description("List a user's followers")
+  .option("--all", "Fetch all pages");
+addCookieOption(followersCmd);
+addJsonOption(followersCmd);
+
+followersCmd.action(async (userId, opts) => {
+  try {
+    const client = await getClient(opts.cookieSource, opts.chromeProfile, opts.cookieString);
+    const allUsers: unknown[] = [];
+    let cursor = "";
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = (await client.getUserFollowers(userId, cursor)) as {
+        users?: unknown[];
+        has_more?: boolean;
+        cursor?: string;
+      };
+      if (res.users) allUsers.push(...res.users);
+      hasMore = opts.all ? (res.has_more ?? false) : false;
+      cursor = res.cursor ?? "";
+    }
+
+    if (opts.json) {
+      output(allUsers, true);
+    } else {
+      for (const user of allUsers) {
+        const u = user as Record<string, unknown>;
+        console.log(
+          `${kleur.bold(String(u.nickname ?? "?"))}  ${kleur.dim(String(u.user_id ?? ""))}  ${kleur.dim(String(u.desc ?? "").slice(0, 60))}`
+        );
+      }
+      console.log(kleur.dim(`\n${allUsers.length} followers`));
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
+// ─── following ─────────────────────────────────────────────────────────────
+
+const followingCmd = program
+  .command("following <userId>")
+  .description("List accounts a user follows")
+  .option("--all", "Fetch all pages");
+addCookieOption(followingCmd);
+addJsonOption(followingCmd);
+
+followingCmd.action(async (userId, opts) => {
+  try {
+    const client = await getClient(opts.cookieSource, opts.chromeProfile, opts.cookieString);
+    const allUsers: unknown[] = [];
+    let cursor = "";
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = (await client.getUserFollowing(userId, cursor)) as {
+        users?: unknown[];
+        has_more?: boolean;
+        cursor?: string;
+      };
+      if (res.users) allUsers.push(...res.users);
+      hasMore = opts.all ? (res.has_more ?? false) : false;
+      cursor = res.cursor ?? "";
+    }
+
+    if (opts.json) {
+      output(allUsers, true);
+    } else {
+      for (const user of allUsers) {
+        const u = user as Record<string, unknown>;
+        console.log(
+          `${kleur.bold(String(u.nickname ?? "?"))}  ${kleur.dim(String(u.user_id ?? ""))}  ${kleur.dim(String(u.desc ?? "").slice(0, 60))}`
+        );
+      }
+      console.log(kleur.dim(`\n${allUsers.length} following`));
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
+// ─── delete ────────────────────────────────────────────────────────────────
+
+const deleteCmd = program
+  .command("delete <url>")
+  .description("Delete your own note");
+addCookieOption(deleteCmd);
+addJsonOption(deleteCmd);
+
+deleteCmd.action(async (url, opts) => {
+  try {
+    const client = await getClient(opts.cookieSource, opts.chromeProfile, opts.cookieString);
+    const { noteId } = parseNoteUrl(url);
+    const result = await client.deleteNote(noteId);
+    if (opts.json) {
+      output(result, true);
+    } else {
+      console.log(kleur.green("Note deleted!"));
     }
   } catch (err) {
     handleError(err);
