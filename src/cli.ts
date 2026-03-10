@@ -693,6 +693,44 @@ deleteCmd.action(async (url, opts) => {
   }
 });
 
+// ─── boards ──────────────────────────────────────────────────────────────────
+
+const boardsCmd = program
+  .command("boards [user-id]")
+  .description("List user's collection boards (收藏专辑列表)");
+addCookieOption(boardsCmd);
+addJsonOption(boardsCmd);
+
+boardsCmd.action(async (userId, opts) => {
+  try {
+    const client = await getClient(opts.cookieSource, opts.chromeProfile, opts.cookieString);
+    let uid = userId;
+    if (!uid) {
+      const me = (await client.getSelfInfo()) as Record<string, string>;
+      uid = me.user_id;
+    }
+    console.error(kleur.dim(`Listing boards for ${uid}...`));
+    const data = (await client.getUserBoards(uid)) as Record<string, unknown>;
+    if (opts.json) {
+      output(data, true);
+    } else {
+      const boards = (data.boards ?? []) as Array<Record<string, unknown>>;
+      const count = (data.board_count ?? boards.length) as number;
+      console.log(kleur.dim(`${count} board(s)\n`));
+      for (const b of boards) {
+        const id = (b.id ?? "") as string;
+        const name = (b.name ?? "(untitled)") as string;
+        const total = (b.total ?? 0) as number;
+        const privacy = b.privacy === 1 ? kleur.yellow(" [private]") : "";
+        console.log(`  ${kleur.bold(name)}  ${kleur.dim(`${total} notes`)}${privacy}  ${kleur.dim(id)}`);
+        if (b.desc && b.desc !== "暂无简介") console.log(`    ${kleur.dim(b.desc as string)}`);
+      }
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
 // ─── board ───────────────────────────────────────────────────────────────────
 
 const boardCmd = program
@@ -707,14 +745,43 @@ boardCmd.action(async (url, opts) => {
     const boardId = parseBoardUrl(url);
 
     console.error(kleur.dim(`Fetching board ${boardId}...`));
-    const result = (await client.getBoardFromHtml(boardId)) as {
+
+    let result: {
       boardId: string;
       name: string;
       desc: string;
       noteCount: number;
       notes: Array<{ note_id: string; title: string; author: string; type: string; url: string }>;
-      hasMore: boolean;
     };
+
+    // Try REST API first, fall back to HTML scraping
+    try {
+      const [info, feeds] = await Promise.all([
+        client.getBoardInfo(boardId) as Promise<Record<string, unknown>>,
+        client.getBoardNotes(boardId) as Promise<Record<string, unknown>>,
+      ]);
+      const rawNotes = (feeds.notes ?? []) as Array<Record<string, unknown>>;
+      const notes = rawNotes.map((n) => ({
+        note_id: (n.note_id ?? n.id ?? "") as string,
+        xsec_token: (n.xsec_token ?? "") as string,
+        title: (n.display_title ?? n.title ?? "") as string,
+        type: (n.type ?? "") as string,
+        author: ((n.user as Record<string, unknown>)?.nick_name ??
+                 (n.user as Record<string, unknown>)?.nickname ?? "") as string,
+        url: `https://www.xiaohongshu.com/explore/${n.note_id ?? n.id}`,
+      }));
+      result = {
+        boardId,
+        name: (info.name ?? "") as string,
+        desc: (info.desc ?? "") as string,
+        noteCount: (info.total ?? notes.length) as number,
+        notes,
+      };
+    } catch {
+      // REST API failed — fall back to HTML scraping
+      console.error(kleur.dim("REST API unavailable, falling back to HTML scraping..."));
+      result = (await client.getBoardFromHtml(boardId)) as typeof result;
+    }
 
     if (opts.json) {
       output(result, true);
@@ -728,7 +795,7 @@ boardCmd.action(async (url, opts) => {
         );
         console.log(`    ${kleur.cyan(note.url)}`);
       }
-      console.log(kleur.dim(`\n${result.notes.length} notes${result.hasMore ? " (more available — board page only shows first batch)" : ""}`));
+      console.log(kleur.dim(`\n${result.notes.length} notes`));
     }
   } catch (err) {
     handleError(err);

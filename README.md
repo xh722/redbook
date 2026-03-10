@@ -96,7 +96,9 @@ redbook reply "<noteUrl>" --comment-id "<id>" --content "感谢提问！"
 redbook batch-reply "<noteUrl>" --strategy questions --dry-run
 redbook batch-reply "<noteUrl>" --strategy questions --template "感谢！{content}" --max 10
 
-# 查看收藏专辑内容
+# 查看收藏专辑
+redbook boards                          # 列出自己的专辑
+redbook boards <userId>                 # 列出他人的专辑
 redbook board "https://www.xiaohongshu.com/board/abc123"
 redbook board abc123 --json
 
@@ -130,6 +132,7 @@ redbook post --title "测试" --body "..." --images img.png --private
 | `collect <url>` | 收藏（书签）笔记 |
 | `uncollect <url>` | 取消收藏笔记 |
 | `health` | 检测笔记隐形限流（通过创作者后台隐藏 level 字段） |
+| `boards [userId]` | 列出用户的收藏专辑（默认当前用户） |
 | `board <url>` | 查看收藏专辑内容（接受专辑 URL 或 ID） |
 | `analyze-viral <url>` | 分析爆款笔记（钩子、互动、结构） |
 | `viral-template <url...>` | 从 1-3 篇爆款笔记提取内容模板 |
@@ -410,7 +413,9 @@ redbook reply "<noteUrl>" --comment-id "<id>" --content "Thanks for asking!"
 redbook batch-reply "<noteUrl>" --strategy questions --dry-run
 redbook batch-reply "<noteUrl>" --strategy questions --template "Thanks! {content}" --max 10
 
-# List notes in a collection album
+# List user's collection boards
+redbook boards                          # your own boards
+redbook boards <userId>                 # another user's boards
 redbook board "https://www.xiaohongshu.com/board/abc123" --json
 
 # Check note health / rate-limiting status
@@ -443,6 +448,7 @@ redbook post --title "测试" --body "..." --images img.png --private
 | `collect <url>` | Collect (bookmark) a note |
 | `uncollect <url>` | Remove a note from your collection |
 | `health` | Detect hidden rate-limiting on your notes (via creator API's secret level field) |
+| `boards [userId]` | List user's collection boards (defaults to current user) |
 | `board <url>` | List notes in a collection album (accepts board URL or ID) |
 | `analyze-viral <url>` | Analyze why a viral note works (hooks, engagement, structure) |
 | `viral-template <url...>` | Extract a content template from 1-3 viral notes |

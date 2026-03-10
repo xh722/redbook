@@ -62,6 +62,7 @@ Use the `redbook` CLI to search notes, read content, analyze creators, automate 
 | List following | `redbook following <userId> --json` |
 | Delete own note | `redbook delete <url>` |
 | Check note health | `redbook health --json` or `redbook health --all --json` |
+| List user boards | `redbook boards` or `redbook boards <userId> --json` |
 | List album notes | `redbook board <board-url>` or `redbook board <boardId> --json` |
 | Render markdown to cards | `redbook render content.md --style xiaohongshu` |
 | Publish image note | `redbook post --title "..." --body "..." --images img.jpg` |
