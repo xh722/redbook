@@ -22,6 +22,7 @@
  *   redbook following <user-id> --cookie-source chrome --json
  *   redbook delete <url> --cookie-source chrome
  *   redbook health --cookie-source chrome --json
+ *   redbook board <board-url> --cookie-source chrome --json
  */
 
 import { Command } from "commander";
@@ -692,6 +693,48 @@ deleteCmd.action(async (url, opts) => {
   }
 });
 
+// ─── board ───────────────────────────────────────────────────────────────────
+
+const boardCmd = program
+  .command("board <url>")
+  .description("List notes in a collection album (收藏专辑)");
+addCookieOption(boardCmd);
+addJsonOption(boardCmd);
+
+boardCmd.action(async (url, opts) => {
+  try {
+    const client = await getClient(opts.cookieSource, opts.chromeProfile, opts.cookieString);
+    const boardId = parseBoardUrl(url);
+
+    console.error(kleur.dim(`Fetching board ${boardId}...`));
+    const result = (await client.getBoardFromHtml(boardId)) as {
+      boardId: string;
+      name: string;
+      desc: string;
+      noteCount: number;
+      notes: Array<{ note_id: string; title: string; author: string; type: string; url: string }>;
+      hasMore: boolean;
+    };
+
+    if (opts.json) {
+      output(result, true);
+    } else {
+      if (result.name) console.log(kleur.bold(result.name));
+      if (result.desc) console.log(kleur.dim(result.desc));
+      console.log();
+      for (const note of result.notes) {
+        console.log(
+          `  ${kleur.bold(note.title || "(no title)")}  ${kleur.dim(`@${note.author || "?"}`)}  [${note.type || "?"}]`
+        );
+        console.log(`    ${kleur.cyan(note.url)}`);
+      }
+      console.log(kleur.dim(`\n${result.notes.length} notes${result.hasMore ? " (more available — board page only shows first batch)" : ""}`));
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
 // ─── health ──────────────────────────────────────────────────────────────────
 
 const healthCmd = program
@@ -1197,6 +1240,15 @@ renderCmd.action(async (file, opts) => {
 });
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+function parseBoardUrl(url: string): string {
+  if (url.includes("xiaohongshu.com/board/")) {
+    const urlObj = new URL(url);
+    const parts = urlObj.pathname.split("/").filter(Boolean);
+    return parts[parts.length - 1];
+  }
+  return url; // assume raw board ID
+}
 
 function parseNoteUrl(url: string): {
   noteId: string;

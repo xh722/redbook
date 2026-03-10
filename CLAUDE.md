@@ -17,7 +17,7 @@ Both are conditional jobs in `.github/workflows/npm-publish.yml`. Manual trigger
 
 ## Project Structure
 
-- `src/cli.ts` — CLI entry point, 19 commands, `getClient()` is the single cookie→client funnel
+- `src/cli.ts` — CLI entry point, 20 commands, `getClient()` is the single cookie→client funnel
 - `src/lib/client.ts` — XHS API client (`postComment`, `replyComment`, etc.)
 - `src/lib/cookies.ts` — Cookie extraction with Chrome profile auto-discovery
 - `src/lib/signing.ts` — Request signing

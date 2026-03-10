@@ -38,6 +38,7 @@ clawhub install redbook
 - **爆款拆解** —— 分析爆款笔记的标题钩子、互动比例、评论主题
 - **爆款模板** —— 从多篇爆款笔记提取内容模板（标题结构、正文结构、钩子模式）
 - **限流检测** —— 检测笔记是否被隐形限流（通过创作者后台 API 的隐藏 level 字段）
+- **收藏专辑** —— 查看收藏专辑内容，分析专辑内的笔记
 - **收藏管理** —— 查看收藏列表、收藏/取消收藏笔记（支持自己和其他用户的公开收藏）
 - **评论管理** —— 发评论、回复评论、按策略批量回复（问题优先 / 高赞优先 / 未回复优先）
 - **图文卡片** —— Markdown 渲染为小红书风格的 PNG 图文卡片（7 种配色主题）
@@ -95,6 +96,10 @@ redbook reply "<noteUrl>" --comment-id "<id>" --content "感谢提问！"
 redbook batch-reply "<noteUrl>" --strategy questions --dry-run
 redbook batch-reply "<noteUrl>" --strategy questions --template "感谢！{content}" --max 10
 
+# 查看收藏专辑内容
+redbook board "https://www.xiaohongshu.com/board/abc123"
+redbook board abc123 --json
+
 # 检测笔记限流状态
 redbook health
 redbook health --all --json
@@ -125,6 +130,7 @@ redbook post --title "测试" --body "..." --images img.png --private
 | `collect <url>` | 收藏（书签）笔记 |
 | `uncollect <url>` | 取消收藏笔记 |
 | `health` | 检测笔记隐形限流（通过创作者后台隐藏 level 字段） |
+| `board <url>` | 查看收藏专辑内容（接受专辑 URL 或 ID） |
 | `analyze-viral <url>` | 分析爆款笔记（钩子、互动、结构） |
 | `viral-template <url...>` | 从 1-3 篇爆款笔记提取内容模板 |
 | `comment <url>` | 发表评论 |
@@ -346,6 +352,7 @@ After installing, run `redbook whoami` to verify the connection. The CLI auto-de
 - **Viral note breakdown** — Analyze title hooks, engagement ratios, comment themes
 - **Viral templates** — Extract content templates from multiple viral notes (hook patterns, body structure, engagement profile)
 - **Rate-limit detection** — Detect hidden throttling on your notes via the creator API's secret `level` field
+- **Collection albums** — List notes in a collection album (收藏专辑) for batch analysis
 - **Favorites management** — List collected notes, collect/uncollect notes (own and other users' public collections)
 - **Comment management** — Post comments, reply to comments, batch-reply with strategies (questions / top-engaged / unanswered)
 - **Image cards** — Render markdown to styled PNG cards for XHS posts (7 color themes)
@@ -403,6 +410,9 @@ redbook reply "<noteUrl>" --comment-id "<id>" --content "Thanks for asking!"
 redbook batch-reply "<noteUrl>" --strategy questions --dry-run
 redbook batch-reply "<noteUrl>" --strategy questions --template "Thanks! {content}" --max 10
 
+# List notes in a collection album
+redbook board "https://www.xiaohongshu.com/board/abc123" --json
+
 # Check note health / rate-limiting status
 redbook health
 redbook health --all --json
@@ -433,6 +443,7 @@ redbook post --title "测试" --body "..." --images img.png --private
 | `collect <url>` | Collect (bookmark) a note |
 | `uncollect <url>` | Remove a note from your collection |
 | `health` | Detect hidden rate-limiting on your notes (via creator API's secret level field) |
+| `board <url>` | List notes in a collection album (accepts board URL or ID) |
 | `analyze-viral <url>` | Analyze why a viral note works (hooks, engagement, structure) |
 | `viral-template <url...>` | Extract a content template from 1-3 viral notes |
 | `comment <url>` | Post a top-level comment |

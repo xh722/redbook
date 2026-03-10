@@ -423,6 +423,68 @@ export class XhsClient {
     throw new XhsApiError("Note not found in HTML state");
   }
 
+  // ─── Board / Collection Album Endpoints ──────────────────────────────
+
+  async getBoardFromHtml(
+    boardId: string
+  ): Promise<unknown> {
+    const url = `${HOME_URL}/board/${boardId}?source=web_user_page`;
+    const res = await fetch(url, {
+      headers: {
+        "user-agent": USER_AGENT,
+        referer: `${HOME_URL}/`,
+        cookie: cookiesToString(this.cookies),
+      },
+    });
+
+    const html = await res.text();
+    const match = html.match(
+      /window\.__INITIAL_STATE__=({.*})<\/script>/
+    );
+    if (!match) {
+      throw new XhsApiError("Could not parse __INITIAL_STATE__ from board page");
+    }
+
+    const stateStr = match[1].replace(/:\s*undefined/g, ':""').replace(/,\s*undefined/g, ',""');
+    const state = JSON.parse(stateStr);
+
+    // Board details are in state.board.boardDetails or state.board.boardFeedsMap
+    const boardDetails = state.board?.boardDetails;
+    const boardFeedsMap = state.board?.boardFeedsMap;
+
+    // Extract notes from boardFeedsMap (check both direct and _rawValue)
+    let feedEntry = boardFeedsMap?.[boardId] ?? boardFeedsMap?._rawValue?.[boardId];
+    if (!feedEntry) {
+      // Try first entry as fallback
+      const entries = boardFeedsMap?._rawValue ?? boardFeedsMap ?? {};
+      const firstKey = Object.keys(entries).find(k => k !== '_rawValue');
+      if (firstKey) feedEntry = entries[firstKey];
+    }
+
+    const notes = feedEntry?.notes ?? [];
+    const detail = boardDetails?.[boardId] ?? boardDetails?._rawValue?.[boardId] ?? {};
+
+    return {
+      boardId,
+      name: detail.name ?? detail.title ?? "",
+      desc: detail.desc ?? "",
+      noteCount: detail.noteCount ?? detail.note_count ?? notes.length,
+      cursor: feedEntry?.cursor ?? "",
+      hasMore: feedEntry?.hasMore ?? false,
+      notes: Array.isArray(notes) ? notes.map((n: Record<string, unknown>) => ({
+        note_id: n.noteId ?? n.note_id ?? "",
+        xsec_token: n.xsecToken ?? n.xsec_token ?? "",
+        title: n.displayTitle ?? n.display_title ?? n.title ?? "",
+        type: n.type ?? "",
+        author: (n.user as Record<string, unknown>)?.nickName ??
+                (n.user as Record<string, unknown>)?.nickname ?? "",
+        cover: (n.cover as Record<string, unknown>)?.urlDefault ??
+               (n.cover as Record<string, unknown>)?.url ?? "",
+        url: `${HOME_URL}/explore/${n.noteId ?? n.note_id}${n.xsecToken ? `?xsec_token=${n.xsecToken}&xsec_source=pc_share` : ""}`,
+      })) : [],
+    };
+  }
+
   // ─── Creator/Posting Endpoints ────────────────────────────────────────
 
   async getUploadPermit(
