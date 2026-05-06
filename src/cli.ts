@@ -1341,6 +1341,51 @@ renderCmd.action(async (file, opts) => {
   }
 });
 
+// ─── post-browser ───────────────────────────────────────────────────────────
+
+const postBrowserCmd = program
+  .command("post-browser")
+  .description("Open Xiaohongshu web editor in Chrome and prefill an image note")
+  .requiredOption("--title <title>", "Note title")
+  .requiredOption("--body <body>", "Note body text")
+  .option("--images <paths...>", "Image file paths")
+  .option("--private", "Set visibility to private when possible")
+  .option("--publish", "Click the final publish button automatically")
+  .option("--headless", "Run Chrome headless (best for debugging, not manual finish)")
+  .option("--chrome-path <path>", "Explicit Chrome executable path");
+addCookieOption(postBrowserCmd);
+addJsonOption(postBrowserCmd);
+
+postBrowserCmd.action(async (opts) => {
+  try {
+    const { postViaBrowser } = await import("./lib/browser-post.js");
+    const cookies = opts.cookieString
+      ? parseCookieString(opts.cookieString)
+      : await extractCookies(opts.cookieSource as CookieSource, opts.chromeProfile);
+    const result = await postViaBrowser(cookies, {
+      title: opts.title,
+      body: opts.body,
+      images: opts.images ?? [],
+      isPrivate: opts.private ?? false,
+      submit: opts.publish ?? false,
+      headless: opts.headless ?? false,
+      chromePath: opts.chromePath,
+    });
+
+    if (opts.json) {
+      output(result, true);
+    } else {
+      console.log(kleur.green("Browser editor prepared."));
+      console.log(`  URL: ${kleur.bold(result.currentUrl)}`);
+      console.log(`  Mode: ${result.headless ? "headless" : "interactive"}`);
+      console.log(`  Status: ${result.success ? kleur.green("published") : kleur.yellow("manual review may be needed")}`);
+      console.log(kleur.yellow("  Final publish may still require captcha or manual confirmation."));
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function parseBoardUrl(url: string): string {

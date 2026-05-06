@@ -113,6 +113,10 @@ redbook render content.md --style dark --output-dir ./cards
 # 发布图文笔记
 redbook post --title "标题" --body "正文内容" --images cover.png
 redbook post --title "测试" --body "..." --images img.png --private
+
+# 通过浏览器自动化发布图文笔记（更稳）
+redbook post-browser --title "标题" --body "正文内容" --images cover.png card_1.png --private
+redbook post-browser --title "测试" --body "..." --images img.png --publish
 ```
 
 ## 命令一览
@@ -127,6 +131,7 @@ redbook post --title "测试" --body "..." --images img.png --private
 | `user-posts <userId>` | 列出用户所有笔记 |
 | `feed` | 获取推荐页内容 |
 | `post` | 发布图文笔记（易触发验证码，详见下方说明） |
+| `post-browser` | 通过浏览器创作页预填或发布图文笔记 |
 | `topics <关键词>` | 搜索话题/标签 |
 | `favorites [userId]` | 查看收藏笔记列表（默认当前用户） |
 | `collect <url>` | 收藏（书签）笔记 |
@@ -205,6 +210,25 @@ npm install -g puppeteer-core marked
 | `--images <路径...>` | 图片文件路径（必填） |
 | `--topic <关键词>` | 附加话题标签 |
 | `--private` | 发布为私密笔记 |
+
+### 浏览器发布选项（post-browser）
+
+通过小红书网页创作后台发布图文笔记。相比 API 发布，更适合处理风控、验证码和创作页状态变化。
+
+| 选项 | 说明 |
+|------|------|
+| `--title <标题>` | 笔记标题（必填） |
+| `--body <正文>` | 笔记正文（必填） |
+| `--images <路径...>` | 图片文件路径（必填） |
+| `--private` | 尝试切换为“仅自己可见” |
+| `--publish` | 自动点击最终“发布”按钮 |
+| `--headless` | Headless 模式运行 Chrome，适合自动化调试 |
+| `--chrome-path <路径>` | 手动指定 Chrome 可执行文件路径 |
+
+说明：
+- 不带 `--publish` 时，命令会打开并预填网页创作页，留给你手动确认。
+- 带 `--publish` 时，命令会自动点击发布；如遇验证码或二次确认，仍可能需要人工处理。
+- Linux 环境常用 `--chrome-path /usr/bin/google-chrome`。
 
 ## 常见问题
 
@@ -429,6 +453,10 @@ redbook render content.md --style dark --output-dir ./cards
 # Publish (requires image)
 redbook post --title "标题" --body "正文" --images cover.png
 redbook post --title "测试" --body "..." --images img.png --private
+
+# Publish via browser automation (more reliable)
+redbook post-browser --title "标题" --body "正文" --images cover.png card_1.png --private
+redbook post-browser --title "测试" --body "..." --images img.png --publish
 ```
 
 ## Commands
@@ -443,6 +471,7 @@ redbook post --title "测试" --body "..." --images img.png --private
 | `user-posts <userId>` | List a user's posted notes |
 | `feed` | Get homepage feed |
 | `post` | Publish an image note (captcha-prone, see below) |
+| `post-browser` | Prefill or publish an image note via the web creator page |
 | `topics <keyword>` | Search for topics/hashtags |
 | `favorites [userId]` | List collected/favorited notes (defaults to current user) |
 | `collect <url>` | Collect (bookmark) a note |
@@ -521,6 +550,25 @@ Publishing **frequently triggers captcha** (type=124). Image upload works, but t
 | `--images <paths...>` | Image file paths (required) |
 | `--topic <keyword>` | Topic/hashtag to search and attach |
 | `--private` | Publish as private note |
+
+### Browser Post Options
+
+Use the Xiaohongshu web creator page instead of the creator API. This is more reliable when the API publish flow is blocked by captcha.
+
+| Option | Description |
+|--------|-------------|
+| `--title <title>` | Note title (required) |
+| `--body <body>` | Note body text (required) |
+| `--images <paths...>` | Image file paths (required) |
+| `--private` | Try to switch visibility to private |
+| `--publish` | Click the final publish button automatically |
+| `--headless` | Run Chrome headless (useful for automation/debugging) |
+| `--chrome-path <path>` | Explicit Chrome executable path |
+
+Notes:
+- Without `--publish`, the command only opens and prefills the editor for manual review.
+- With `--publish`, it will attempt the final click, but captcha or extra verification may still require manual handling.
+- On Linux, `--chrome-path /usr/bin/google-chrome` is often the correct path.
 
 ## Troubleshooting
 
