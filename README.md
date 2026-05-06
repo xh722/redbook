@@ -117,6 +117,10 @@ redbook post --title "测试" --body "..." --images img.png --private
 # 通过浏览器自动化发布图文笔记（更稳）
 redbook post-browser --title "标题" --body "正文内容" --images cover.png card_1.png --private
 redbook post-browser --title "测试" --body "..." --images img.png --publish
+
+# 一条命令：Markdown 渲染并进入浏览器发布
+redbook render-post content.md --private
+redbook render-post content.md --publish --cookie-string "a1=值; web_session=值"
 ```
 
 ## 命令一览
@@ -145,6 +149,7 @@ redbook post-browser --title "测试" --body "..." --images img.png --publish
 | `reply <url>` | 回复指定评论 |
 | `batch-reply <url>` | 按策略批量回复评论（支持预览模式） |
 | `render <文件>` | Markdown 渲染为小红书图文卡片 PNG（需可选依赖） |
+| `render-post <文件>` | Markdown 渲染后直接进入浏览器发帖流程 |
 
 ### 通用选项
 
@@ -229,6 +234,30 @@ npm install -g puppeteer-core marked
 - 不带 `--publish` 时，命令会打开并预填网页创作页，留给你手动确认。
 - 带 `--publish` 时，命令会自动点击发布；如遇验证码或二次确认，仍可能需要人工处理。
 - Linux 环境常用 `--chrome-path /usr/bin/google-chrome`。
+
+### 一键渲染发布选项（render-post）
+
+先把 Markdown 渲染成图文卡片，再直接打开浏览器创作页并预填标题、正文、图片。
+
+| 选项 | 说明 |
+|------|------|
+| `--style <名称>` | 覆盖 frontmatter 的配色 |
+| `--pagination <模式>` | `auto` 或 `separator` |
+| `--output-dir <目录>` | 图片输出目录 |
+| `--width <像素>` | 卡片宽度 |
+| `--height <像素>` | 卡片高度 |
+| `--dpr <倍率>` | 设备像素比 |
+| `--title <标题>` | 覆盖 frontmatter 标题 |
+| `--body <正文>` | 覆盖 markdown 正文 |
+| `--private` | 尝试切换为“仅自己可见” |
+| `--publish` | 自动点击最终“发布”按钮 |
+| `--headless` | Headless 模式运行 Chrome |
+| `--chrome-path <路径>` | 手动指定 Chrome 路径 |
+
+说明：
+- 默认使用 markdown frontmatter 的 `title` 作为笔记标题。
+- 默认使用 markdown 正文作为小红书正文。
+- 不带 `--publish` 时只预填创作页，适合人工检查后再发。
 
 ## 常见问题
 
@@ -457,6 +486,10 @@ redbook post --title "测试" --body "..." --images img.png --private
 # Publish via browser automation (more reliable)
 redbook post-browser --title "标题" --body "正文" --images cover.png card_1.png --private
 redbook post-browser --title "测试" --body "..." --images img.png --publish
+
+# One command: render markdown, then open browser posting flow
+redbook render-post content.md --private
+redbook render-post content.md --publish --cookie-string "a1=VALUE; web_session=VALUE"
 ```
 
 ## Commands
@@ -485,6 +518,7 @@ redbook post-browser --title "测试" --body "..." --images img.png --publish
 | `reply <url>` | Reply to a specific comment |
 | `batch-reply <url>` | Batch reply to comments with filtering strategy (supports dry-run) |
 | `render <file>` | Render markdown to styled PNG image cards for XHS posts (optional deps) |
+| `render-post <file>` | Render markdown and hand it off to the browser posting flow |
 
 ### Global Options
 
@@ -569,6 +603,30 @@ Notes:
 - Without `--publish`, the command only opens and prefills the editor for manual review.
 - With `--publish`, it will attempt the final click, but captcha or extra verification may still require manual handling.
 - On Linux, `--chrome-path /usr/bin/google-chrome` is often the correct path.
+
+### Render-Post Options
+
+Render markdown into Xiaohongshu cards, then open the browser creator page and prefill the post.
+
+| Option | Description |
+|--------|-------------|
+| `--style <name>` | Override frontmatter color style |
+| `--pagination <mode>` | `auto` or `separator` |
+| `--output-dir <dir>` | Output directory for rendered assets |
+| `--width <n>` | Card width in pixels |
+| `--height <n>` | Card height in pixels |
+| `--dpr <n>` | Device pixel ratio |
+| `--title <title>` | Override frontmatter title |
+| `--body <body>` | Override markdown body text |
+| `--private` | Try to switch visibility to private |
+| `--publish` | Click the final publish button automatically |
+| `--headless` | Run Chrome headless |
+| `--chrome-path <path>` | Explicit Chrome executable path |
+
+Notes:
+- By default, the note title comes from markdown frontmatter `title`.
+- By default, the note body comes from the markdown body.
+- Without `--publish`, it stops after prefilling the browser editor so you can review manually.
 
 ## Troubleshooting
 

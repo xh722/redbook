@@ -1386,6 +1386,85 @@ postBrowserCmd.action(async (opts) => {
   }
 });
 
+// ─── render-post ────────────────────────────────────────────────────────────
+
+const renderPostCmd = program
+  .command("render-post <file>")
+  .description("Render markdown to XHS cards, then prefill or publish via the browser creator page")
+  .option("--style <name>", "Color style: purple, xiaohongshu, mint, sunset, ocean, elegant, dark")
+  .option("--pagination <mode>", "Pagination: auto, separator", "auto")
+  .option("--output-dir <dir>", "Output directory (default: <file>-assets next to the markdown)")
+  .option("--width <n>", "Card width in px", "1080")
+  .option("--height <n>", "Card height in px", "1440")
+  .option("--dpr <n>", "Device pixel ratio", "2")
+  .option("--title <title>", "Override note title (defaults to markdown frontmatter title)")
+  .option("--body <body>", "Override note body (defaults to markdown body text)")
+  .option("--private", "Set visibility to private when possible")
+  .option("--publish", "Click the final publish button automatically")
+  .option("--headless", "Run Chrome headless (best for debugging, not manual finish)")
+  .option("--chrome-path <path>", "Explicit Chrome executable path");
+addCookieOption(renderPostCmd);
+addJsonOption(renderPostCmd);
+
+renderPostCmd.action(async (file, opts) => {
+  try {
+    const { renderCards, parseCardMarkdown } = await import("./lib/render.js");
+    const { postViaBrowser } = await import("./lib/browser-post.js");
+
+    const raw = readFileSync(file, "utf-8");
+    const { frontmatter, body } = parseCardMarkdown(raw);
+    const outputDir =
+      opts.outputDir ??
+      file.replace(/\.[^.]+$/, "") + "-assets";
+
+    const renderResult = await renderCards(file, {
+      style: opts.style,
+      pagination: opts.pagination,
+      outputDir,
+      width: parseInt(opts.width),
+      height: parseInt(opts.height),
+      dpr: parseInt(opts.dpr),
+    });
+
+    const cookies = opts.cookieString
+      ? parseCookieString(opts.cookieString)
+      : await extractCookies(opts.cookieSource as CookieSource, opts.chromeProfile);
+
+    const title = opts.title ?? frontmatter.title;
+    if (!title) {
+      throw new Error("Title is required. Add frontmatter title or pass --title.");
+    }
+
+    const bodyText = opts.body ?? body.trim();
+    const postResult = await postViaBrowser(cookies, {
+      title,
+      body: bodyText,
+      images: [renderResult.coverPath, ...renderResult.cardPaths],
+      isPrivate: opts.private ?? false,
+      submit: opts.publish ?? false,
+      headless: opts.headless ?? false,
+      chromePath: opts.chromePath,
+    });
+
+    const result = {
+      render: renderResult,
+      post: postResult,
+    };
+
+    if (opts.json) {
+      output(result, true);
+    } else {
+      console.log(kleur.green("Rendered cards and prepared browser post."));
+      console.log(`  Cover: ${kleur.bold(renderResult.coverPath)}`);
+      console.log(`  Cards: ${kleur.bold(String(renderResult.cardPaths.length))}`);
+      console.log(`  URL: ${kleur.bold(postResult.currentUrl)}`);
+      console.log(`  Status: ${postResult.success ? kleur.green("published") : kleur.yellow("manual review may be needed")}`);
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function parseBoardUrl(url: string): string {

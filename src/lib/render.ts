@@ -507,9 +507,20 @@ function findChromeExecutable(): string {
     }
   }
 
+  if (process.platform === "linux") {
+    const candidates = [
+      "/usr/bin/google-chrome",
+      "/usr/bin/google-chrome-stable",
+      "/usr/bin/chromium-browser",
+      "/usr/bin/chromium",
+    ];
+    for (const p of candidates) {
+      if (existsSync(p)) return p;
+    }
+  }
+
   throw new Error(
-    "Chrome not found. Install Google Chrome or set CHROME_PATH environment variable.\n" +
-      "Expected: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    "Chrome not found. Install Google Chrome or set CHROME_PATH environment variable."
   );
 }
 
