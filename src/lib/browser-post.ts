@@ -42,6 +42,15 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function normalizePostText(text: string): string {
+  return text
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 async function importPuppeteer(): Promise<PuppeteerModule> {
   try {
     return await import("puppeteer-core");
@@ -196,6 +205,7 @@ async function fillTitle(page: PuppeteerPage, title: string): Promise<void> {
 }
 
 async function fillBody(page: PuppeteerPage, body: string): Promise<void> {
+  const normalized = normalizePostText(body);
   const bodyHandle = await page.evaluateHandle(() => {
     const textarea = Array.from(document.querySelectorAll("textarea"))
       .find((el) => {
@@ -219,7 +229,7 @@ async function fillBody(page: PuppeteerPage, body: string): Promise<void> {
   await page.keyboard.press("KeyA");
   await page.keyboard.up(modifier);
   await page.keyboard.press("Backspace");
-  await bodyInput.type(body, { delay: 10 });
+  await bodyInput.type(normalized, { delay: 10 });
 }
 
 async function setPrivacy(page: PuppeteerPage, isPrivate: boolean): Promise<void> {
@@ -291,6 +301,13 @@ async function waitForPublishResult(page: PuppeteerPage): Promise<{
       return {
         success: true,
         message: "Note published via browser automation and reached the success page.",
+      };
+    }
+
+    if (url.includes("published=true")) {
+      return {
+        success: true,
+        message: "Note published via browser automation and returned to the publish page with published=true.",
       };
     }
 
@@ -366,7 +383,7 @@ export async function postViaBrowser(
     const publishPage = await openPublishPage(browser, page);
     await enterImageMode(publishPage);
     await uploadImages(publishPage, options.images);
-    await fillTitle(publishPage, options.title);
+    await fillTitle(publishPage, normalizePostText(options.title));
     await fillBody(publishPage, options.body);
     await setPrivacy(publishPage, options.isPrivate ?? false);
 

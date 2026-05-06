@@ -1409,7 +1409,7 @@ addJsonOption(renderPostCmd);
 renderPostCmd.action(async (file, opts) => {
   try {
     const { renderCards, parseCardMarkdown } = await import("./lib/render.js");
-    const { postViaBrowser } = await import("./lib/browser-post.js");
+    const { postViaBrowser, normalizePostText } = await import("./lib/browser-post.js");
 
     const raw = readFileSync(file, "utf-8");
     const { frontmatter, body } = parseCardMarkdown(raw);
@@ -1435,7 +1435,18 @@ renderPostCmd.action(async (file, opts) => {
       throw new Error("Title is required. Add frontmatter title or pass --title.");
     }
 
-    const bodyText = opts.body ?? body.trim();
+    const bodyText = normalizePostText(
+      opts.body ??
+      body
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/\*\*([^*]+)\*\*/g, "$1")
+        .replace(/\*([^*]+)\*/g, "$1")
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/^\s*[-*]\s+/gm, "• ")
+        .replace(/^\s*\d+\.\s+/gm, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
+    );
     const postResult = await postViaBrowser(cookies, {
       title,
       body: bodyText,
